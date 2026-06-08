@@ -25,14 +25,7 @@ import {
   useCompleted,
   useFavorite,
 } from '../../lib/progress';
-import {
-  pauseMusic,
-  playMusic,
-  setMusicDucked,
-  setMusicVolume,
-} from '../../lib/audio';
-import { storage, STORAGE_KEYS } from '../../lib/storage';
-import type { UserPrefs } from '../../types';
+import { setMusicDucked } from '../../lib/audio';
 
 interface Props {
   article: Article;
@@ -69,8 +62,6 @@ export function ReadingSession({ article, onBack, onOpenMenu }: Props) {
   const [showTranslation, setShowTranslation] = useState<boolean>(true);
   const [readerHeight, setReaderHeight] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
-  const [musicEnabled, setMusicEnabledState] = useState<boolean>(false);
-  const [musicVolume, setMusicVolumeState] = useState<number>(0.3);
 
   const speechRef = useRef<SpeechController | null>(null);
   const fallbackTimerRef = useRef<number | null>(null);
@@ -130,60 +121,11 @@ export function ReadingSession({ article, onBack, onOpenMenu }: Props) {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      const saved = await storage.get<UserPrefs>(STORAGE_KEYS.prefs);
-      if (typeof saved?.musicEnabled === 'boolean') setMusicEnabledState(saved.musicEnabled);
-      if (typeof saved?.musicVolume === 'number') {
-        setMusicVolumeState(saved.musicVolume);
-        setMusicVolume(saved.musicVolume);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    setMusicVolume(musicVolume);
-  }, [musicVolume]);
-
-  useEffect(() => {
-    if (musicEnabled && state === 'playing') {
-      void playMusic();
-    } else {
-      pauseMusic();
-    }
-  }, [musicEnabled, state]);
-
-  useEffect(() => {
     setMusicDucked(mode === 'tts' && state === 'playing');
-  }, [mode, state]);
-
-  useEffect(() => {
     return () => {
-      pauseMusic();
+      setMusicDucked(false);
     };
-  }, []);
-
-  async function persistMusicPrefs(next: Partial<Pick<UserPrefs, 'musicEnabled' | 'musicVolume'>>) {
-    const saved = (await storage.get<UserPrefs>(STORAGE_KEYS.prefs)) ?? null;
-    const merged: UserPrefs = {
-      level: saved?.level ?? article.level,
-      musicEnabled: saved?.musicEnabled ?? false,
-      musicVolume: saved?.musicVolume ?? 0.3,
-      favorites: saved?.favorites ?? [],
-      ...next,
-    };
-    await storage.set(STORAGE_KEYS.prefs, merged);
-  }
-
-  function handleToggleMusic() {
-    const next = !musicEnabled;
-    setMusicEnabledState(next);
-    void persistMusicPrefs({ musicEnabled: next });
-  }
-
-  function handleMusicVolume(v: number) {
-    setMusicVolumeState(v);
-    void persistMusicPrefs({ musicVolume: v });
-  }
+  }, [mode, state]);
 
   useEffect(() => {
     return () => {
@@ -816,48 +758,6 @@ export function ReadingSession({ article, onBack, onOpenMenu }: Props) {
             </div>
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-stone-700">
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={handleToggleMusic}
-                  aria-label={musicEnabled ? 'Mute background music' : 'Play background music'}
-                  aria-pressed={musicEnabled}
-                  className={[
-                    'flex h-9 w-9 items-center justify-center rounded-full border transition',
-                    musicEnabled
-                      ? 'border-amber-700 bg-amber-700 text-white'
-                      : 'border-amber-300 bg-white text-amber-900 hover:bg-amber-100',
-                  ].join(' ')}
-                >
-                  {musicEnabled ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                      <path d="M9 18V5l12-2v13" />
-                      <circle cx="6" cy="18" r="3" />
-                      <circle cx="18" cy="16" r="3" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                      <path d="M9 18V5l12-2v13" />
-                      <circle cx="6" cy="18" r="3" />
-                      <circle cx="18" cy="16" r="3" />
-                      <line x1="3" y1="3" x2="21" y2="21" />
-                    </svg>
-                  )}
-                </button>
-                {musicEnabled && (
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    value={musicVolume}
-                    onChange={(e) => handleMusicVolume(Number(e.target.value))}
-                    aria-label="Music volume"
-                    className="w-20 accent-amber-700"
-                  />
-                )}
-              </div>
-
               {mode === 'tts' && (
                 <div className="flex items-center gap-2">
                   <label htmlFor="wpm" className="whitespace-nowrap">

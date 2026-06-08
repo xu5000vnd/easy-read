@@ -1,8 +1,8 @@
-// Ambient background music for the reading session.
+// Ambient background music. Plays globally across screens whenever enabled.
 //
-// Default: a slow, low-volume Web Audio pad (no file needed) so the feature
-// works offline out of the box. Drop your own loopable MP3 at
-// `public/audio/ambient-1.mp3` and call `setMusicSource('audio')` to switch.
+// Default: looped MP3 at /audio/ambient-1.mp3 (Vite serves from public/).
+// Falls back to a slow Web Audio pad if the file isn't available.
+import { useEffect, useState } from 'react';
 
 type MusicSource = 'synth' | 'audio';
 
@@ -221,6 +221,29 @@ let filePlayer: AudioFilePlayer | null = null;
 let currentSource: MusicSource = 'audio';
 let baseVolume = 0.3;
 let ducked = false;
+let enabled = false;
+
+type Listener = () => void;
+const listeners = new Set<Listener>();
+
+function notify(): void {
+  listeners.forEach((l) => l());
+}
+
+export function subscribeMusic(l: Listener): () => void {
+  listeners.add(l);
+  return () => {
+    listeners.delete(l);
+  };
+}
+
+export function isMusicEnabled(): boolean {
+  return enabled;
+}
+
+export function getMusicVolume(): number {
+  return baseVolume;
+}
 
 function getSynth(): AmbientSynth {
   if (!synth) {
@@ -266,10 +289,37 @@ export function setMusicVolume(v: number): void {
   baseVolume = Math.max(0, Math.min(1, v));
   if (synth) synth.setVolume(baseVolume);
   if (filePlayer) filePlayer.setVolume(baseVolume);
+  notify();
 }
 
 export function setMusicDucked(d: boolean): void {
   ducked = d;
   if (synth) synth.setDucked(d);
   if (filePlayer) filePlayer.setDucked(d);
+}
+
+export async function setMusicEnabled(v: boolean): Promise<void> {
+  if (enabled === v) return;
+  enabled = v;
+  if (v) await playMusic();
+  else pauseMusic();
+  notify();
+}
+
+export function useMusic(): {
+  enabled: boolean;
+  volume: number;
+  setEnabled: (v: boolean) => void;
+  setVolume: (v: number) => void;
+} {
+  const [, force] = useState(0);
+  useEffect(() => subscribeMusic(() => force((n) => n + 1)), []);
+  return {
+    enabled,
+    volume: baseVolume,
+    setEnabled: (v: boolean) => {
+      void setMusicEnabled(v);
+    },
+    setVolume: setMusicVolume,
+  };
 }

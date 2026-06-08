@@ -8,6 +8,13 @@ import { ArticleList } from './features/article-list/ArticleList';
 import { ReadingSession } from './features/reading-session/ReadingSession';
 import { SideMenu } from './features/side-menu/SideMenu';
 import { Favorites } from './features/favorites/Favorites';
+import {
+  setMusicEnabled,
+  setMusicVolume,
+  subscribeMusic,
+  isMusicEnabled,
+  getMusicVolume,
+} from './lib/audio';
 
 type Screen =
   | { kind: 'level' }
@@ -75,6 +82,11 @@ export default function App() {
       };
       setPrefs(merged);
 
+      setMusicVolume(merged.musicVolume);
+      if (merged.musicEnabled) {
+        void setMusicEnabled(true);
+      }
+
       const fromHash = hashToScreen(window.location.hash);
       if (fromHash) {
         setScreen(fromHash);
@@ -85,6 +97,21 @@ export default function App() {
       }
       hydratedRef.current = true;
     })();
+  }, []);
+
+  useEffect(() => {
+    return subscribeMusic(() => {
+      if (!hydratedRef.current) return;
+      void storage.get<UserPrefs>(STORAGE_KEYS.prefs).then((saved) => {
+        const next: UserPrefs = {
+          ...DEFAULT_PREFS,
+          ...(saved ?? {}),
+          musicEnabled: isMusicEnabled(),
+          musicVolume: getMusicVolume(),
+        };
+        void storage.set(STORAGE_KEYS.prefs, next);
+      });
+    });
   }, []);
 
   useEffect(() => {

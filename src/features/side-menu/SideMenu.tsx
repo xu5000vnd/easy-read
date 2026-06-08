@@ -7,6 +7,7 @@ import {
   useFavoriteIds,
   useRecentArticleIds,
 } from '../../lib/progress';
+import { useMusic } from '../../lib/audio';
 
 interface Props {
   open: boolean;
@@ -66,6 +67,7 @@ export function SideMenu({
     .map((id) => articleById(id))
     .filter((a): a is Article => !!a);
   const favoritesCount = favoriteIds.length;
+  const music = useMusic();
 
   return (
     <>
@@ -141,6 +143,61 @@ export function SideMenu({
                 {favoritesCount}
               </span>
             </button>
+          </section>
+
+          <section className="mb-4">
+            <div className="px-2 pb-2 pt-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
+              Background music
+            </div>
+            <div className="rounded-lg px-3 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-amber-800">
+                    <path d="M9 18V5l12-2v13" />
+                    <circle cx="6" cy="18" r="3" />
+                    <circle cx="18" cy="16" r="3" />
+                  </svg>
+                  <span className="text-sm font-medium text-stone-900">Music</span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={music.enabled}
+                  onClick={() => music.setEnabled(!music.enabled)}
+                  className={[
+                    'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition',
+                    music.enabled ? 'bg-amber-700' : 'bg-stone-300',
+                  ].join(' ')}
+                >
+                  <span
+                    className={[
+                      'inline-block h-5 w-5 transform rounded-full bg-white shadow transition',
+                      music.enabled ? 'translate-x-5' : 'translate-x-0.5',
+                    ].join(' ')}
+                  />
+                </button>
+              </div>
+              {music.enabled && (
+                <div className="mt-2 flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-stone-500">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  </svg>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={music.volume}
+                    onChange={(e) => music.setVolume(Number(e.target.value))}
+                    aria-label="Music volume"
+                    className="flex-1 accent-amber-700"
+                  />
+                  <span className="w-8 text-right text-xs tabular-nums text-stone-500">
+                    {Math.round(music.volume * 100)}
+                  </span>
+                </div>
+              )}
+            </div>
           </section>
 
           <section>
