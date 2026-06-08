@@ -6,8 +6,8 @@ export const LEVELS: Level[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 // 1.0 = same pace as wpm. <1.0 = slower scroll (easier to read along).
 // >1.0 = faster scroll. Tune per level here.
 export const LEVEL_CONFIGS: Record<Level, LevelConfig> = {
-  A1: { level: 'A1', defaultWpm: 90, minWpm: 60, maxWpm: 130, scrollSpeedFactor: 0.8 },
-  A2: { level: 'A2', defaultWpm: 110, minWpm: 70, maxWpm: 150, scrollSpeedFactor: 0.9 },
+  A1: { level: 'A1', defaultWpm: 90, minWpm: 60, maxWpm: 130, scrollSpeedFactor: 1 },
+  A2: { level: 'A2', defaultWpm: 110, minWpm: 70, maxWpm: 150, scrollSpeedFactor: 1 },
   B1: { level: 'B1', defaultWpm: 140, minWpm: 90, maxWpm: 190, scrollSpeedFactor: 1.0 },
   B2: { level: 'B2', defaultWpm: 165, minWpm: 110, maxWpm: 220, scrollSpeedFactor: 1.05 },
   C1: { level: 'C1', defaultWpm: 190, minWpm: 130, maxWpm: 260, scrollSpeedFactor: 1.1 },
